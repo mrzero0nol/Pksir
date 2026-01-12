@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'includes/cart_helper.php';
 
 $id = $_GET['id'] ?? 0;
 $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
@@ -16,59 +17,80 @@ $stock_count = $pdo->query("SELECT COUNT(*) FROM product_stocks WHERE product_id
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($product['name']) ?> - Detail</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title><?= htmlspecialchars($product['name']) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .product-hero {
+            height: 300px;
+            width: 100%;
+            background: #2a2a2a;
+            position: relative;
+        }
+        .product-hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .product-detail-card {
+            margin-top: -20px;
+            border-radius: 20px 20px 0 0;
+            padding: 25px 20px;
+            background: var(--bg-color);
+            position: relative;
+            z-index: 10;
+            min-height: 50vh;
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="index.php">&laquo; Kembali ke Toko</a>
-        </div>
-    </nav>
 
-    <div class="container my-5">
-        <div class="row">
-            <div class="col-md-5">
-                <img src="<?= htmlspecialchars($product['image_url']) ?>" class="img-fluid rounded shadow" alt="<?= htmlspecialchars($product['name']) ?>">
-            </div>
-            <div class="col-md-7">
-                <h2><?= htmlspecialchars($product['name']) ?></h2>
-                <h3 class="text-primary my-3">Rp <?= number_format($product['price'], 0, ',', '.') ?></h3>
-                <p><?= nl2br(htmlspecialchars($product['description'])) ?></p>
-
-                <hr>
-
-                <?php if ($stock_count > 0): ?>
-                    <div class="alert alert-success">Stok Tersedia: <?= $stock_count ?></div>
-
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <h5>Form Pemesanan</h5>
-                            <form action="checkout.php" method="POST">
-                                <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
-                                <div class="mb-3">
-                                    <label>Nama Lengkap</label>
-                                    <input type="text" name="name" class="form-control" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label>Nomor WhatsApp / Email (untuk info pesanan)</label>
-                                    <input type="text" name="contact" class="form-control" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label>Kode Voucher (Opsional)</label>
-                                    <input type="text" name="voucher" class="form-control">
-                                </div>
-                                <button type="submit" class="btn btn-success btn-lg w-100">Lanjut Pembayaran</button>
-                            </form>
-                        </div>
-                    </div>
-
-                <?php else: ?>
-                    <div class="alert alert-danger">Maaf, stok saat ini sedang habis.</div>
-                <?php endif; ?>
-            </div>
-        </div>
+    <div class="product-hero">
+        <a href="index.php" class="btn-icon" style="position: absolute; top: 20px; left: 20px; z-index: 20; background: rgba(0,0,0,0.5); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <img src="<?= htmlspecialchars($product['image_url']) ?>" alt="<?= htmlspecialchars($product['name']) ?>">
     </div>
+
+    <div class="product-detail-card">
+        <h2 class="h4 mb-1"><?= htmlspecialchars($product['name']) ?></h2>
+        <h3 class="text-primary mb-3">Rp <?= number_format($product['price'], 0, ',', '.') ?></h3>
+
+        <?php if ($stock_count > 0): ?>
+            <span class="badge bg-success mb-3">Stok Tersedia: <?= $stock_count ?></span>
+        <?php else: ?>
+            <span class="badge bg-danger mb-3">Stok Habis</span>
+        <?php endif; ?>
+
+        <p class="text-muted small mb-4">
+            <?= nl2br(htmlspecialchars($product['description'])) ?>
+        </p>
+
+        <div style="height: 80px;"></div> <!-- Spacer -->
+    </div>
+
+    <!-- Fixed Bottom Action Bar -->
+    <div class="glass-nav p-3 fixed-bottom d-flex gap-2">
+        <?php if ($stock_count > 0): ?>
+            <form action="cart.php" method="POST" class="w-50">
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
+                <button class="btn btn-outline-light w-100 rounded-pill">
+                    <i class="bi bi-cart-plus"></i> Cart
+                </button>
+            </form>
+            <form action="cart.php" method="POST" class="w-50">
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
+                <button class="btn btn-primary w-100 rounded-pill">
+                    Beli Sekarang
+                </button>
+            </form>
+        <?php else: ?>
+            <button class="btn btn-secondary w-100 rounded-pill" disabled>Stok Habis</button>
+        <?php endif; ?>
+    </div>
+
 </body>
 </html>
