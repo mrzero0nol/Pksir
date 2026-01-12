@@ -56,6 +56,7 @@ $products = $pdo->query("SELECT p.*, c.name as category_name,
             <a href="index.php">Dashboard</a>
             <a href="products.php">Produk & Kategori</a>
             <a href="vouchers.php">Voucher</a>
+            <a href="settings.php">Pengaturan</a>
             <a href="../index.php" target="_blank">Lihat Website</a>
             <a href="logout.php" class="text-danger">Logout</a>
         </div>

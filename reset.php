@@ -10,7 +10,7 @@ $security_key = 'rahasia123';
 
 if (!isset($_GET['key']) || $_GET['key'] !== $security_key) {
     http_response_code(403);
-    die("<h1>Akses Ditolak 🚫</h1><p>Anda tidak memiliki izin untuk menjalankan file ini.</p><p>Gunakan parameter <code>?key=rahasia123</code> di URL.</p>");
+    die("<h1>Akses Ditolak 🚫</h1><p>Anda tidak memiliki izin untuk menjalankan file ini.</p>");
 }
 
 try {
