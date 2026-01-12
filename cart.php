@@ -33,7 +33,7 @@ $total = getCartTotal($pdo);
 $user = getCurrentUser($pdo);
 ?>
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
