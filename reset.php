@@ -19,17 +19,19 @@ try {
     // Password default baru: "admin123"
     $password_baru = password_hash('admin123', PASSWORD_DEFAULT);
     
-    // Cek apakah user admin ada?
-    $stmt_check = $pdo->query("SELECT COUNT(*) FROM admins WHERE username = 'admin'");
+    // Cek apakah user admin ada di tabel USERS?
+    $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = 'admin'");
+    $stmt_check->execute();
+
     if ($stmt_check->fetchColumn() == 0) {
         // Jika tidak ada, kita buat baru
-        $sql = "INSERT INTO admins (username, password) VALUES ('admin', :p)";
+        $sql = "INSERT INTO users (username, name, email, password, role) VALUES ('admin', 'Super Admin', 'admin@example.com', :p, 'admin')";
         $stmt = $pdo->prepare($sql);
         $stmt->execute(['p' => $password_baru]);
         $action = "dibuat";
     } else {
-        // Jika ada, kita update
-        $sql = "UPDATE admins SET password = :p WHERE username = 'admin'";
+        // Jika ada, kita update role dan passwordnya
+        $sql = "UPDATE users SET password = :p, role = 'admin' WHERE username = 'admin'";
         $stmt = $pdo->prepare($sql);
         $stmt->execute(['p' => $password_baru]);
         $action = "direset";
@@ -39,7 +41,7 @@ try {
     echo "User <b>admin</b> berhasil $action.<br>";
     echo "Password saat ini: <b>admin123</b><br>";
     echo "<hr>";
-    echo "Silakan coba login di <a href='admin/login.php'>Halaman Admin</a>.<br><br>";
+    echo "Silakan coba login di <a href='login.php'>Halaman Login</a>.<br><br>";
     echo "<p style='color:red; font-weight:bold;'>PENTING: Segera hapus file reset.php ini setelah Anda berhasil login demi keamanan!</p>";
 
 } catch (PDOException $e) {

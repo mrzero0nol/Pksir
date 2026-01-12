@@ -2,11 +2,10 @@
 
 Website ini adalah toko online produk digital (seperti akun premium, voucher, lisensi) yang terintegrasi dengan Payment Gateway **Pakasir** (QRIS).
 
-## Fitur
-- **Admin Panel**: Kelola Produk, Kategori, Stok, Voucher, dan Lihat Penjualan.
-- **Sistem Stok Otomatis**: Pembeli langsung mendapatkan Email/Password setelah pembayaran sukses.
-- **Integrasi Pakasir**: Pembayaran otomatis via QRIS.
-- **Voucher Diskon**: Support potongan harga tetap atau persen.
+## Fitur Baru (Versi Light Theme)
+- **Tampilan Baru**: Desain modern (Light Theme) ala aplikasi mobile.
+- **Login Terpadu**: Login User dan Admin dalam satu pintu (menggunakan Username).
+- **Admin via Profil**: Menu admin dapat diakses melalui halaman profil setelah login.
 
 ---
 
@@ -26,68 +25,32 @@ Website ini adalah toko online produk digital (seperti akun premium, voucher, li
 1. Buka **File Manager** di cPanel.
 2. Masuk ke folder `public_html`.
 3. Upload semua file website ini.
-4. Pastikan struktur file terlihat seperti ini di `public_html`:
-   - `admin/`
-   - `assets/`
-   - `includes/`
-   - `index.php`
-   - `config.php`
-   - `reset.php`
-   - dll...
 
 ### Langkah 3: Konfigurasi
 1. Di File Manager, cari file bernama `.env.example`.
 2. Rename (ganti nama) file tersebut menjadi `.env` (pastikan ada titik di depan).
-   *Jika file hilang setelah rename, klik "Settings" di pojok kanan atas File Manager dan centang "Show Hidden Files".*
-3. Edit file `.env` dan isi sesuai data Anda:
-
-```ini
-DB_HOST=localhost
-DB_NAME=namadomain_shop     <-- Nama Database dari Langkah 1
-DB_USER=namadomain_user     <-- User Database dari Langkah 1
-DB_PASS=password_anda       <-- Password Database
-
-APP_URL=https://websitekamu.com
-PAKASIR_API_KEY=xxxxx       <-- API Key dari Pakasir
-PAKASIR_PROJECT_SLUG=xxxxx  <-- Project Slug dari Pakasir
-```
+3. Edit file `.env` dan isi data database Anda.
 
 ### Langkah 4: Setup Pakasir (Payment Gateway)
 1. Login ke [Pakasir.com](https://pakasir.com).
-2. Buat Project baru.
-3. Salin **Project Slug** dan **API Key** ke file `.env` tadi.
-4. Di menu Edit Project Pakasir, isi **Webhook URL** dengan:
-   `https://websitekamu.com/webhook.php`
-   *(Ganti websitekamu.com dengan domain Anda)*.
+2. Salin **Project Slug** dan **API Key** ke file `.env`.
+3. Isi **Webhook URL** di Pakasir dengan: `https://websitekamu.com/webhook.php`.
 
 ---
 
 ## Cara Menggunakan
 
 ### Login Admin
-- Buka: `https://websitekamu.com/admin/login.php`
-- Username Default: `admin`
-- Password Default: `admin123`
+1. Buka halaman utama website dan klik tombol **Login** atau menu **Saya**.
+2. Masukkan Username Default: `admin` dan Password Default: `admin123`.
+3. Setelah login berhasil, buka menu **Profil (Saya)**.
+4. Anda akan melihat menu khusus **Administrator** > **Dashboard Admin**.
 
-### Lupa Password / Reset Admin
-Jika Anda lupa password admin atau gagal login pertama kali:
-1. Buka browser dan kunjungi:
-   `https://websitekamu.com/reset.php?key=rahasia123`
-2. Jika konfigurasi database benar, Anda akan melihat pesan **SUKSES**. Password akan direset kembali menjadi `admin123`.
-3. **PENTING:** Setelah berhasil login, segera **HAPUS** file `reset.php` dari File Manager cPanel agar website Anda aman dari peretas.
-
-### Menambah Stok (Akun Premium/Voucher)
-1. Masuk ke Admin Panel > **Produk**.
-2. Klik tombol **Atur Stok** pada produk yang diinginkan.
-3. Masukkan data akun (misal: `email:password`) di kolom input.
-   - Anda bisa memasukkan banyak akun sekaligus (satu baris satu akun).
-4. Klik **Simpan**.
-   - Stok akan bertambah.
-   - Ketika ada pembeli yang membayar, sistem akan otomatis mengambil satu baris stok dan memberikannya ke pembeli.
-
-### Troubleshooting
-- **Halaman Blank/Error 500**: Cek kembali konfigurasi di `.env` pastikan user/pass database benar.
-- **Stok tidak muncul setelah bayar**: Pastikan Webhook URL di Pakasir sudah benar dan status transaksi di Pakasir sudah 'Success'.
+### Reset Password Admin
+Jika lupa password, kunjungi:
+`https://websitekamu.com/reset.php?key=rahasia123`
+Password akan kembali menjadi `admin123`.
+**PENTING:** Segera hapus file `reset.php` setelah digunakan!
 
 ---
-*Dibuat dengan PHP Native agar mudah dikembangkan dan dideploy oleh pemula.*
+*Dibuat dengan PHP Native.*

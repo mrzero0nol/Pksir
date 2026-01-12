@@ -16,17 +16,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($new_password !== $confirm_password) {
         $error = "Konfirmasi password baru tidak cocok.";
     } else {
-        // Ambil data admin. Karena sistem single admin, kita ambil username 'admin'.
-        // Jika nantinya sistem support multi-admin, ganti dengan $_SESSION['admin_username']
-        $stmt = $pdo->prepare("SELECT * FROM admins WHERE username = 'admin' LIMIT 1");
-        $stmt->execute();
-        $admin = $stmt->fetch();
+        // Ambil ID user dari session yang sedang login
+        $user_id = $_SESSION['user_id'];
 
-        if ($admin && password_verify($current_password, $admin['password'])) {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch();
+
+        if ($user && password_verify($current_password, $user['password'])) {
             // Password lama benar, update ke yang baru
             $new_hash = password_hash($new_password, PASSWORD_DEFAULT);
-            $update = $pdo->prepare("UPDATE admins SET password = ? WHERE username = 'admin'");
-            if ($update->execute([$new_hash])) {
+            $update = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+            if ($update->execute([$new_hash, $user_id])) {
                 $message = "Password berhasil diubah!";
             } else {
                 $error = "Gagal mengupdate database.";
@@ -61,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2>Pengaturan Akun</h2>
 
             <div class="card p-4 mt-3" style="max-width: 500px;">
-                <h5 class="mb-3">Ganti Password Admin</h5>
+                <h5 class="mb-3">Ganti Password Saya</h5>
 
                 <?php if ($message): ?>
                     <div class="alert alert-success"><?= $message ?></div>
