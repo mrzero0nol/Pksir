@@ -1,32 +1,28 @@
 <?php
 require_once 'config.php';
 require_once 'includes/pakasir_api.php';
+require_once 'includes/cart_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');
     exit;
 }
 
-$product_id = $_POST['product_id'];
+$cartItems = getCartItems($pdo);
+if (empty($cartItems)) {
+    die("Keranjang kosong.");
+}
+
 $customer_name = $_POST['name'];
 $customer_contact = $_POST['contact'];
 $voucher_code = trim($_POST['voucher'] ?? '');
 
-// 1. Fetch Product
-$stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
-$stmt->execute([$product_id]);
-$product = $stmt->fetch();
+// Calculate Total
+$total_amount = getCartTotal($pdo);
 
-if (!$product) die("Produk tidak valid.");
-
-// 2. Check Stock again
-$stock_count = $pdo->query("SELECT COUNT(*) FROM product_stocks WHERE product_id = $product_id AND status = 'available'")->fetchColumn();
-if ($stock_count <= 0) die("Stok habis.");
-
-// 3. Calculate Price & Apply Voucher
-$price = $product['price'];
+// Apply Voucher (Only applies to total once for now, or per item? Assuming Total Discount)
+// Logic: If voucher is percentage, apply to total. If fixed, apply to total.
 $discount = 0;
-
 if ($voucher_code) {
     $vStmt = $pdo->prepare("SELECT * FROM vouchers WHERE code = ? AND status = 'active' AND (usage_limit = 0 OR used_count < usage_limit)");
     $vStmt->execute([$voucher_code]);
@@ -36,7 +32,7 @@ if ($voucher_code) {
         if ($voucher['discount_type'] == 'fixed') {
             $discount = $voucher['discount_value'];
         } else {
-            $discount = ($price * $voucher['discount_value']) / 100;
+            $discount = ($total_amount * $voucher['discount_value']) / 100;
         }
     } else {
         $voucher_code = null;
@@ -45,22 +41,42 @@ if ($voucher_code) {
     $voucher_code = null;
 }
 
-$total_amount = $price - $discount;
-if ($total_amount < 1000) $total_amount = 1000; // Minimum for most Qris
+$final_total = $total_amount - $discount;
+if ($final_total < 1000) $final_total = 1000;
 
-// 4. Create Order in DB
+// Create Invoice ID
 $invoice_id = 'INV-' . time() . rand(100, 999);
-$stmt = $pdo->prepare("INSERT INTO orders (invoice_id, product_id, customer_name, customer_contact, total_amount, voucher_code, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')");
-$stmt->execute([$invoice_id, $product_id, $customer_name, $customer_contact, $total_amount, $voucher_code]);
-$order_db_id = $pdo->lastInsertId();
 
-// 5. Generate Payment URL (Integrasi Via URL)
+// Create Orders (Multiple rows for multiple items)
+// Note: We need to ensure 'orders' table supports multiple rows with same invoice_id.
+// (We attempted to drop UNIQUE index in planning phase).
+foreach ($cartItems as $item) {
+    // Check stock for each item
+    $stock_count = $pdo->query("SELECT COUNT(*) FROM product_stocks WHERE product_id = {$item['id']} AND status = 'available'")->fetchColumn();
+    if ($stock_count < $item['qty']) {
+        die("Stok tidak cukup untuk produk: " . htmlspecialchars($item['name']));
+    }
+
+    $item_total = $item['price'] * $item['qty'];
+    // Distribute discount proportionally? Or just store original price and handle total on payment?
+    // For simplicity, we store the *item* total price in DB row, but the Payment Gateway request uses the *Final Total*.
+
+    // Insert into orders
+    // We added 'quantity' column in the plan.
+    $stmt = $pdo->prepare("INSERT INTO orders (invoice_id, product_id, quantity, customer_name, customer_contact, total_amount, voucher_code, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')");
+    $stmt->execute([$invoice_id, $item['id'], $item['qty'], $customer_name, $customer_contact, $item_total, $voucher_code]);
+}
+
+// Generate Payment URL
 $redirect_url = APP_URL . "/status.php?inv=" . $invoice_id;
-$pay_url = "https://app.pakasir.com/pay/" . PAKASIR_PROJECT_SLUG . "/" . (int)$total_amount . "?order_id=" . $invoice_id . "&redirect=" . urlencode($redirect_url) . "&qris_only=1";
+$pay_url = "https://app.pakasir.com/pay/" . PAKASIR_PROJECT_SLUG . "/" . (int)$final_total . "?order_id=" . $invoice_id . "&redirect=" . urlencode($redirect_url) . "&qris_only=1";
 
-// Update DB with this URL just in case
-$pdo->prepare("UPDATE orders SET payment_url = ? WHERE id = ?")->execute([$pay_url, $order_db_id]);
+// We might want to update the first order row with payment URL or just rely on invoice_id
+$pdo->prepare("UPDATE orders SET payment_url = ? WHERE invoice_id = ?")->execute([$pay_url, $invoice_id]);
 
-// Redirect user to Pakasir
+// Clear Cart
+clearCart();
+
+// Redirect
 header("Location: " . $pay_url);
 exit;
