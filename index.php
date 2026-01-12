@@ -1,92 +1,78 @@
 <?php
 require_once 'config.php';
+require_once 'includes/auth_helper.php';
+require_once 'includes/cart_helper.php';
 
-// Fetch Categories
-$categories = $pdo->query("SELECT * FROM categories")->fetchAll();
+// Fetch Banners
+$stmt = $pdo->query("SELECT * FROM banners WHERE is_active = 1 ORDER BY sort_order ASC");
+$banners = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch Products (with stock count)
-$query = "SELECT p.*, c.name as category_name,
-         (SELECT COUNT(*) FROM product_stocks s WHERE s.product_id = p.id AND s.status = 'available') as stock_count
-         FROM products p JOIN categories c ON p.category_id = c.id";
+// Fetch Products
+$stmt = $pdo->query("SELECT * FROM products ORDER BY created_at DESC");
+$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-if (isset($_GET['cat'])) {
-    $query .= " WHERE p.category_id = " . intval($_GET['cat']);
-}
-$query .= " ORDER BY p.id DESC";
-$products = $pdo->query($query)->fetchAll();
+// Fetch Settings for Title
+$stmt = $pdo->prepare("SELECT setting_value FROM site_settings WHERE setting_key = 'site_title'");
+$stmt->execute();
+$settings = ['site_title' => $stmt->fetchColumn() ?: 'Toko Digital'];
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toko Produk Digital</title>
+    <title><?php echo $settings['site_title']; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .hero { background: #007bff; color: white; padding: 50px 0; text-align: center; }
-        .product-card { transition: transform 0.2s; }
-        .product-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    </style>
+    <link href="assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="index.php">DigitalShop</a>
-            <div class="ms-auto">
-                <a href="admin/login.php" class="btn btn-outline-light btn-sm">Admin Login</a>
-            </div>
-        </div>
-    </nav>
 
-    <div class="hero">
-        <div class="container">
-            <h1>Selamat Datang di DigitalShop</h1>
-            <p>Beli Akun Premium, Voucher Game, dan Produk Digital Lainnya.</p>
-        </div>
-    </div>
+<?php include 'includes/header.php'; ?>
 
-    <div class="container my-4">
-        <div class="row">
-            <div class="col-md-3">
-                <div class="list-group">
-                    <a href="index.php" class="list-group-item list-group-item-action <?= !isset($_GET['cat']) ? 'active' : '' ?>">Semua Kategori</a>
-                    <?php foreach ($categories as $cat): ?>
-                    <a href="?cat=<?= $cat['id'] ?>" class="list-group-item list-group-item-action <?= (isset($_GET['cat']) && $_GET['cat'] == $cat['id']) ? 'active' : '' ?>">
-                        <?= htmlspecialchars($cat['name']) ?>
+<div class="container">
+    <!-- Banner Carousel -->
+    <?php if (!empty($banners)): ?>
+    <div id="bannerCarousel" class="carousel slide banner-container" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            <?php foreach ($banners as $index => $banner): ?>
+                <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
+                    <a href="<?php echo $banner['link_url'] ?: '#'; ?>">
+                        <img src="<?php echo $banner['image_url']; ?>" class="d-block w-100" alt="Banner">
                     </a>
-                    <?php endforeach; ?>
                 </div>
-            </div>
+            <?php endforeach; ?>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+    <?php endif; ?>
 
-            <div class="col-md-9">
-                <div class="row">
-                    <?php foreach ($products as $p): ?>
-                    <div class="col-md-4 mb-4">
-                        <div class="card product-card h-100">
-                            <img src="<?= htmlspecialchars($p['image_url']) ?>" class="card-img-top" alt="<?= htmlspecialchars($p['name']) ?>" style="height: 200px; object-fit: cover;">
-                            <div class="card-body">
-                                <h5 class="card-title"><?= htmlspecialchars($p['name']) ?></h5>
-                                <p class="card-text text-muted small"><?= htmlspecialchars($p['category_name']) ?></p>
-                                <h6 class="text-primary">Rp <?= number_format($p['price'], 0, ',', '.') ?></h6>
-
-                                <?php if ($p['stock_count'] > 0): ?>
-                                    <span class="badge bg-success mb-2">Stok: <?= $p['stock_count'] ?></span>
-                                    <a href="product.php?id=<?= $p['id'] ?>" class="btn btn-primary w-100">Beli Sekarang</a>
-                                <?php else: ?>
-                                    <span class="badge bg-secondary mb-2">Stok Habis</span>
-                                    <button class="btn btn-secondary w-100" disabled>Habis</button>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
+    <!-- Product Grid -->
+    <h5 class="mb-3">Produk Terbaru</h5>
+    <div class="row row-cols-2 row-cols-md-4 g-3 mb-5">
+        <?php foreach ($products as $product): ?>
+        <div class="col">
+            <div class="card product-card h-100">
+                <img src="<?php echo $product['image_url'] ?: 'https://via.placeholder.com/300'; ?>" class="card-img-top product-img" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                <div class="card-body product-body d-flex flex-column">
+                    <h5 class="card-title product-title"><?php echo htmlspecialchars($product['name']); ?></h5>
+                    <p class="card-text product-price">Rp <?php echo number_format($product['price'], 0, ',', '.'); ?></p>
+                    <a href="product.php?id=<?php echo $product['id']; ?>" class="btn btn-primary btn-sm mt-auto w-100">Beli</a>
                 </div>
             </div>
         </div>
+        <?php endforeach; ?>
     </div>
+</div>
 
-    <footer class="bg-dark text-white text-center p-3 mt-5">
-        <p>&copy; <?= date('Y') ?> DigitalShop. All rights reserved.</p>
-    </footer>
+<?php include 'includes/bottom_nav.php'; ?>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
