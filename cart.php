@@ -1,6 +1,7 @@
 <?php
 require_once 'config.php';
 require_once 'includes/cart_helper.php';
+require_once 'includes/auth_helper.php';
 
 $action = $_POST['action'] ?? '';
 
@@ -29,6 +30,7 @@ if ($action === 'remove') {
 
 $cartItems = getCartItems($pdo);
 $total = getCartTotal($pdo);
+$user = getCurrentUser($pdo);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -104,16 +106,34 @@ $total = getCartTotal($pdo);
                 <form action="checkout.php" method="POST">
                     <div class="mb-3">
                         <label class="small text-muted mb-1">Nama Lengkap</label>
-                        <input type="text" name="name" class="form-control" required placeholder="Contoh: Budi Santoso">
+                        <input type="text" name="name" class="form-control" required value="<?= $user ? htmlspecialchars($user['name']) : '' ?>" placeholder="Contoh: Budi Santoso">
                     </div>
                     <div class="mb-3">
                         <label class="small text-muted mb-1">WhatsApp / Email</label>
-                        <input type="text" name="contact" class="form-control" required placeholder="08123456789">
+                        <input type="text" name="contact" class="form-control" required value="<?= $user ? htmlspecialchars($user['email']) : '' ?>" placeholder="08123456789">
                     </div>
                     <div class="mb-3">
                         <label class="small text-muted mb-1">Kode Voucher (Opsional)</label>
                         <input type="text" name="voucher" class="form-control" placeholder="Masukan kode jika ada">
                     </div>
+
+                    <?php if ($user): ?>
+                        <div class="form-check mb-3 p-3 glass" style="border: 1px solid var(--primary-color);">
+                            <input class="form-check-input" type="checkbox" name="use_wallet" value="1" id="useWallet" <?= $user['balance'] >= $total ? '' : 'disabled' ?>>
+                            <label class="form-check-label w-100" for="useWallet">
+                                <strong>Bayar dengan Saldo</strong><br>
+                                <small class="text-muted">Saldo: Rp <?= number_format($user['balance'], 0, ',', '.') ?></small>
+                                <?php if ($user['balance'] < $total): ?>
+                                    <div class="text-danger small mt-1">Saldo tidak mencukupi (<a href="wallet.php">Isi Saldo</a>)</div>
+                                <?php endif; ?>
+                            </label>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-info small py-2">
+                            <a href="login.php">Login</a> untuk bayar menggunakan Saldo Dompet.
+                        </div>
+                    <?php endif; ?>
+
                     <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold">Bayar Sekarang</button>
                 </form>
             </div>
