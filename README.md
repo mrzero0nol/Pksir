@@ -20,6 +20,7 @@ Website ini adalah toko online produk digital (seperti akun premium, voucher, li
 5. Hubungkan User ke Database dan centang **ALL PRIVILEGES**.
 6. Buka menu **phpMyAdmin**, pilih database yang baru dibuat.
 7. Klik tab **Import**, pilih file `sql/database.sql` dari folder proyek ini, lalu klik **Go**.
+   > **PERINGATAN:** Langkah ini hanya untuk instalasi baru. Jika database sudah ada isinya, semua data akan terhapus!
 
 ### Langkah 2: Upload File
 1. Buka **File Manager** di cPanel.
@@ -31,6 +32,7 @@ Website ini adalah toko online produk digital (seperti akun premium, voucher, li
    - `includes/`
    - `index.php`
    - `config.php`
+   - `reset.php`
    - dll...
 
 ### Langkah 3: Konfigurasi
@@ -65,7 +67,14 @@ PAKASIR_PROJECT_SLUG=xxxxx  <-- Project Slug dari Pakasir
 ### Login Admin
 - Buka: `https://websitekamu.com/admin/login.php`
 - Username Default: `admin`
-- Password Default: `admin123` (Segera ganti password database admin jika perlu lewat phpMyAdmin untuk keamanan lebih, atau saya sarankan buat fitur ganti password di versi selanjutnya).
+- Password Default: `admin123`
+
+### Lupa Password / Reset Admin
+Jika Anda lupa password admin atau gagal login pertama kali:
+1. Buka browser dan kunjungi:
+   `https://websitekamu.com/reset.php?key=rahasia123`
+2. Jika konfigurasi database benar, Anda akan melihat pesan **SUKSES**. Password akan direset kembali menjadi `admin123`.
+3. **PENTING:** Setelah berhasil login, segera **HAPUS** file `reset.php` dari File Manager cPanel agar website Anda aman dari peretas.
 
 ### Menambah Stok (Akun Premium/Voucher)
 1. Masuk ke Admin Panel > **Produk**.
